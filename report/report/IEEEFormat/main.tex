@@ -28,8 +28,7 @@
 \begin{document}
 
 %%%%%%%%% TÍTULO
-\title{Proposta: Classificação de Eventos de Chuva Extrema
-com Dados Meteorológicos do INMET}
+\title{Proposta de trabalho}
 
 \author{
 Pedro Henrique Marques de Lima \\
@@ -51,26 +50,29 @@ Brasil~\cite{marengo2020trends,cenad2024}. Antecipar esses eventos a
 partir de variáveis meteorológicas observadas é relevante para a
 proteção civil.
 
+Deepfakes são conteúdos realistas gerados por redes generativas, o problema ocorre no uso malicioso para aplicação de golpes, disseminação de desinformação e chantagem usando imagem rostos de pessoas reais~\cite{Rafique2023,Mary2023}.
+
 \textbf{Problema~1 (tabular).}
 Classificação binária horária: dado um vetor de variáveis
-meteorológicas $\mathbf{x}\!\in\!\mathbb{R}^{17}$, prever se o
+meteorológicas $\mathbf{x}\!\in\!\mathbb{R}^{n}$, prever se o
 acumulado de precipitação excede um limiar crítico ($y\!=\!1$).
 Os desafios são o desbalanceamento de classes (chuvas extremas são
 raras), dados faltantes nas séries do INMET e a dependência temporal
 entre observações.
 
-\textbf{Problema~2 (não tabular).}
 
+\textbf{Problema~2 (não tabular).} Classificação binária: dada uma imagem em formato jpeg determinar se a imagem foi gerada artificialmente ($y\!=\!1$).
+ O principal desafio esta na sofisticação das manipulações, que as tornam quase indistinguíveis ao olho humano.
 
 % =====================================================================
 \section{Conjunto de Dados}
 
-Os dados provêm do INMET\footnote{\url{https://portal.inmet.gov.br/dadoshistoricos}}
+Os dados do problema 1 provêm do INMET\footnote{\url{https://portal.inmet.gov.br/dadoshistoricos}}
 (observações horárias de estações automáticas, 2022--2025). Foram
 selecionados cinco eventos reais de precipitação extrema
 (\cref{tab:eventos}); para cada um, a estação mais próxima foi
 escolhida entre 150 disponíveis nos estados alvo (PR, SP, RS, PE),
-com recorte de $\pm$4~meses em torno do desastre.
+com recorte de $\pm$4~meses em torno do desastre. 
 
 \begin{table}[h]
 \centering
@@ -91,42 +93,30 @@ Região Metropolitana      & PE & Palmares (A357)   & 06/02/2025 \\
 \end{tabular}
 \end{table}
 
-O conjunto consolidado possui \textbf{16\,013 registros horários} e
-\textbf{17 variáveis}: precipitação, pressão atmosférica (3),
-radiação global, temperaturas (5), umidade relativa (3) e vento~(3).
-A radiação global apresenta $\sim$43\% de valores ausentes (período
-noturno); demais lacunas são pontuais ($<$3\%), salvo a estação A873
-($\sim$50\% em umidade/orvalho).
+O conjunto consolidado possui \textbf{16\,013 registros horários} com dados sobre: precipitação, pressão atmosférica, temperaturas, umidade relativa e vento.
 
-Inserir Conjunto de Dados do Problema 2 aqui.
-
+Sobre o problema 2, a base de dados foi obtida em um repositório do Kaggle\footnote{\url{https://www.kaggle.com/datasets/prithivsakthiur/deepfake-vs-real-20k}}, os dados dessa base foram coletados da internet aberta e processados utilizando os pipelines do DeepfakeNet para obter apenas imagens deepfakes de alta qualidade. Os dados são divididos em duas classes balanceadas ideal para uso de acurácia como métrica\cite{Rafique2023}. A base conta com imagem formato jpeg de resoluções variadas sendo 9576 imagens deepfake e 9643 imagens reais.
 % =====================================================================
 \section{Metodologia}
 
 \subsection{Pré-processamento}
-\textbf{Problema 1:} Falhas serão tratadas por interpolação temporal
-O rótulo $y\!=\!1$ será definido por limiar de precipitação
-($\geq$20\,mm/h, calibrado pelos critérios INMET). Variáveis
-derivadas de janelas deslizantes (acumulado 3--12\,h, variação de
-pressão) serão adicionadas. Normalização por z-score. \\
-\textbf{Problema 2:}
+\textbf{Problema 1:} Falhas serão tratadas por interpolação temporal Variáveis derivadas de janelas deslizantes (acumulado 3--12\,h, variação de
+pressão) serão adicionadas. Normalização por z-score.
+
+\textbf{Problema 2:} As imagens devem ser redimencionadas para as dimensões exigidas pela rede escolhida. Além do uso de Error Level Analysis (ELA), as imagens serão ressalvas com uma taxa de erro de 95\% para calcular a diferença entre os níveis de compressão. Isso ajuda a destacar áreas manipuladas digitalmente\cite{Rafique2023}.
 
 \subsection{Modelos}
 \textbf{Problema 1:}
 Random Forest, XGBoost/LightGBM.
 Desbalanceamento tratado com SMOTE e ajuste de
 pesos.
-\textbf{Problema 2:}
 
-\subsection{Avaliação}
-\textbf{Problema 1:}
-Métricas: F1-Score, AUC-ROC, Precision-Recall AUC e Balanced
-Accuracy, com matrizes de confusão e curvas ROC/PR. Divisão
-treino/validação/teste (70/15/15\%) respeitando ordem temporal.
-Espera-se que \emph{ensembles} de árvores apresentem melhor
-desempenho~\cite{grinsztajn2022tree}, com foco em maximizar
-\emph{recall} da classe positiva.
 \textbf{Problema 2:}
+SqueezeNet, ResNet18, uso de CNN em conjunto com SVM ou KNN\cite{Mary2023,Rafique2023}.
+
+\subsection{Avaliaçao}
+Para ambos problemas, utilizaremos métricas: F1-Score, AUC-ROC, Precision-Recall AUC e Balanced
+Accuracy, com matrizes de confusão e curvas ROC/PR. Para o problema 1, a divisão será feita respeitando ordem temporal.
 
 % =====================================================================
 \newpage
